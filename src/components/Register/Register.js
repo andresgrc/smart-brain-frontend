@@ -6,50 +6,67 @@ class Register extends React.Component {
     this.state = {
       email: '',
       password: '',
-      name: ''
-    }
+      name: '',
+      error: '' // State to handle and display errors
+    };
   }
 
   onNameChange = (event) => {
-    this.setState({name: event.target.value})
-  }
+    this.setState({ name: event.target.value });
+  };
 
   onEmailChange = (event) => {
-    this.setState({email: event.target.value})
-  }
+    this.setState({ email: event.target.value });
+  };
 
   onPasswordChange = (event) => {
-    this.setState({password: event.target.value})
-  }
+    this.setState({ password: event.target.value });
+  };
 
   onSubmitSignIn = () => {
-    fetch('http://localhost:3001/register', {
+    fetch('https://smart-brain-backend-6s70.onrender.com/register', {
       method: 'post',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: this.state.email,
         password: this.state.password,
-        name: this.state.name
-      })
+        name: this.state.name,
+      }),
     })
-      .then(response => response.json())
-      .then(user => {
-        if (user) {
-          this.props.loadUser(user)
+      .then((response) => response.json())
+      .then((user) => {
+        if (user.id) {
+          // Check if the user registration is successful (user object includes an ID)
+          this.props.loadUser(user);
           this.props.onRouteChange('home');
+        } else {
+          this.setState({ error: 'Unable to register. Please try again.' });
         }
       })
-  }
+      .catch((err) => {
+        console.error('Registration error:', err);
+        this.setState({ error: 'An error occurred. Please try again.' });
+      });
+  };
 
   render() {
+    const { error } = this.state;
+
     return (
       <article className="br3 ba b--black-10 mv4 w-100 w-50-m w-25-l mw6 shadow-5 center">
         <main className="pa4 black-80">
           <div className="measure">
             <fieldset id="sign_up" className="ba b--transparent ph0 mh0">
               <legend className="f1 fw6 ph0 mh0">Register</legend>
+              {error && (
+                <div className="mt3">
+                  <p className="red">{error}</p> {/* Display errors in red */}
+                </div>
+              )}
               <div className="mt3">
-                <label className="db fw6 lh-copy f6" htmlFor="name">Name</label>
+                <label className="db fw6 lh-copy f6" htmlFor="name">
+                  Name
+                </label>
                 <input
                   className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
                   type="text"
@@ -59,7 +76,9 @@ class Register extends React.Component {
                 />
               </div>
               <div className="mt3">
-                <label className="db fw6 lh-copy f6" htmlFor="email-address">Email</label>
+                <label className="db fw6 lh-copy f6" htmlFor="email-address">
+                  Email
+                </label>
                 <input
                   className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
                   type="email"
@@ -69,7 +88,9 @@ class Register extends React.Component {
                 />
               </div>
               <div className="mv3">
-                <label className="db fw6 lh-copy f6" htmlFor="password">Password</label>
+                <label className="db fw6 lh-copy f6" htmlFor="password">
+                  Password
+                </label>
                 <input
                   className="b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
                   type="password"
