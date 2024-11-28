@@ -9,13 +9,15 @@ import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
 import './App.css';
 
+const BASE_URL = 'https://smart-brain-backend-6s70.onrender.com'; // Backend URL
+
 class App extends Component {
   constructor() {
     super();
     this.state = {
       input: '',
       imageUrl: '',
-      boxes: [], // Changed from a single box to an array for multiple boxes
+      boxes: [], // For multiple face boxes
       route: 'signin',
       isSignedIn: false,
       user: {
@@ -57,7 +59,7 @@ class App extends Component {
   };
 
   displayFaceBoxes = (boxes) => {
-    this.setState({ boxes }); // Update state with an array of boxes
+    this.setState({ boxes });
   };
 
   onInputChange = (event) => {
@@ -71,10 +73,11 @@ class App extends Component {
 
     console.log('Image submitted:', input);
 
-    fetch('http://localhost:3001/clarifai', {
+    // Call the backend endpoint for Clarifai API
+    fetch(`${BASE_URL}/imageurl`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageUrl: input }),
+      body: JSON.stringify({ input }), // Use `input` instead of `imageUrl`
     })
       .then((response) => response.json())
       .then((data) => {
@@ -84,7 +87,7 @@ class App extends Component {
           this.displayFaceBoxes(faceBoxes);
 
           // Update user entries
-          fetch('http://localhost:3001/image', {
+          fetch(`${BASE_URL}/image`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: user.id }),
@@ -94,6 +97,8 @@ class App extends Component {
               this.setState(Object.assign(this.state.user, { entries: count }));
             })
             .catch((err) => console.error('Error updating entries:', err));
+        } else {
+          console.error('No outputs received from Clarifai');
         }
       })
       .catch((err) => console.error('Error during API calls:', err));
@@ -101,11 +106,11 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({ isSignedIn: false });
+      this.setState({ isSignedIn: false, input: '', imageUrl: '', boxes: [] });
     } else if (route === 'home') {
       this.setState({ isSignedIn: true });
     }
-    this.setState({ route: route });
+    this.setState({ route });
   };
 
   render() {
