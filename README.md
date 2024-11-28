@@ -1,13 +1,2 @@
-# SmartBrain - v1 
-Final project for ZTM course
-
-1. Clone this repo
-2. Run `npm install`
-3. Run `npm start`
-4. You must add your own API key in the `src/App.js` file to connect to Clarifai.
-
-You can grab Clarifai API key [here](https://www.clarifai.com/)
-
-*visist https://zerotomastery.io/ for more*
-
-# smart-brain-frontend
+# smart-brain-backend
+#### This repository contains the React-based frontend for the Face Recognition App. It allows users to input an image URL, detects faces using Clarifai's API, and visually displays bounding boxes around detected faces. The app includes features for user authentication, rank tracking, and a clean, interactive UI.
