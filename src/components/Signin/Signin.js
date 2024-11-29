@@ -6,7 +6,7 @@ class Signin extends React.Component {
     this.state = {
       signInEmail: '',
       signInPassword: '',
-      error: '' // State to manage and display errors
+      error: '', // State to manage and display errors
     };
   }
 
@@ -19,28 +19,39 @@ class Signin extends React.Component {
   };
 
   onSubmitSignIn = () => {
-    fetch('https://smart-brain-backend-6s70.onrender.com/signin', { // Updated to deployed backend URL
-      method: 'post',
+    const { signInEmail, signInPassword } = this.state;
+
+    // Validate inputs before sending request
+    if (!signInEmail || !signInPassword) {
+      this.setState({ error: 'Please fill in both fields.' });
+      return;
+    }
+
+    fetch('https://smart-brain-backend-6s70.onrender.com/signin', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: this.state.signInEmail,
-        password: this.state.signInPassword,
+        email: signInEmail,
+        password: signInPassword,
       }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to sign in'); // Trigger catch block for non-2xx responses
+        }
+        return response.json();
+      })
       .then((user) => {
         if (user.id) {
-          // Successful sign-in
-          this.props.loadUser(user);
+          this.props.loadUser(user); // Load user data into app state
           this.props.onRouteChange('home');
         } else {
-          // Handle invalid credentials
-          this.setState({ error: 'Invalid email or password. Please try again.' });
+          this.setState({ error: 'Invalid email or password.' });
         }
       })
       .catch((err) => {
         console.error('Sign-in error:', err);
-        this.setState({ error: 'An error occurred. Please try again.' });
+        this.setState({ error: 'Unable to sign in. Please try again.' });
       });
   };
 

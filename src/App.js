@@ -17,7 +17,7 @@ class App extends Component {
     this.state = {
       input: '',
       imageUrl: '',
-      boxes: [], // For multiple face boxes
+      boxes: [],
       route: 'signin',
       isSignedIn: false,
       user: {
@@ -27,6 +27,7 @@ class App extends Component {
         entries: 0,
         joined: '',
       },
+      error: '', // New state to manage global errors
     };
   }
 
@@ -69,7 +70,13 @@ class App extends Component {
   onButtonSubmit = () => {
     const { input, user } = this.state;
 
-    this.setState({ imageUrl: input });
+    if (!input.trim()) {
+      console.error('No input provided');
+      this.setState({ error: 'Please provide an image URL.' });
+      return;
+    }
+
+    this.setState({ imageUrl: input, error: '' }); // Reset error state
 
     console.log('Image submitted:', input);
 
@@ -77,9 +84,14 @@ class App extends Component {
     fetch(`${BASE_URL}/imageurl`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input }), // Use `input` instead of `imageUrl`
+      body: JSON.stringify({ input }), // Match backend payload
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      })
       .then((data) => {
         if (data.outputs) {
           console.log('Clarifai response:', data);
@@ -87,26 +99,41 @@ class App extends Component {
           this.displayFaceBoxes(faceBoxes);
 
           // Update user entries
-          fetch(`${BASE_URL}/image`, {
+          return fetch(`${BASE_URL}/image`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: user.id }),
-          })
-            .then((response) => response.json())
-            .then((count) => {
-              this.setState(Object.assign(this.state.user, { entries: count }));
-            })
-            .catch((err) => console.error('Error updating entries:', err));
+          });
         } else {
-          console.error('No outputs received from Clarifai');
+          throw new Error('Clarifai did not return outputs');
         }
       })
-      .catch((err) => console.error('Error during API calls:', err));
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error updating entries: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((count) => {
+        console.log('Updated user entries:', count);
+        this.setState(Object.assign(this.state.user, { entries: count }));
+      })
+      .catch((err) => {
+        console.error('Error during API calls:', err.message);
+        this.setState({ error: 'Failed to process the image. Please try again.' });
+      });
   };
 
   onRouteChange = (route) => {
+    console.log(`Route changing to: ${route}`);
     if (route === 'signout') {
-      this.setState({ isSignedIn: false, input: '', imageUrl: '', boxes: [] });
+      this.setState({
+        isSignedIn: false,
+        input: '',
+        imageUrl: '',
+        boxes: [],
+        error: '', // Reset error state on sign-out
+      });
     } else if (route === 'home') {
       this.setState({ isSignedIn: true });
     }
@@ -114,12 +141,17 @@ class App extends Component {
   };
 
   render() {
-    const { isSignedIn, imageUrl, route, boxes } = this.state;
+    const { isSignedIn, imageUrl, route, boxes, error } = this.state;
 
     return (
       <div className="App">
         <ParticlesBg type="fountain" bg={true} />
         <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
+        {error && (
+          <div className="error-container">
+            <p className="red">{error}</p>
+          </div>
+        )}
         {route === 'home' ? (
           <div>
             <Logo />
